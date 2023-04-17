@@ -21,7 +21,7 @@ function emu_error(msg: string, err: string): number {
 function console_deo(d: Uint8[], port: number): void {
   switch (port) {
     case 0x8:
-      console.log(d[port]);
+      process.stdout.write(String.fromCharCode(d[port].val));
       return;
     case 0x9:
       console.error('error !!', d[port]);
@@ -29,7 +29,7 @@ function console_deo(d: Uint8[], port: number): void {
   }
 }
 
-function uxn_dei(u: Uxn, addr: number): number {
+export function uxn_dei(u: Uxn, addr: number): number {
   switch (addr & 0xf0) {
     //case 0xc0:
      // return datetime_dei(u, addr);
@@ -38,7 +38,7 @@ function uxn_dei(u: Uxn, addr: number): number {
   }
 }
 
-function uxn_deo(u: Uxn, addr: number): void {
+export function uxn_deo(u: Uxn, addr: number): void {
   const p = addr & 0x0f;
   const d = addr & 0xf0;
 
@@ -96,7 +96,8 @@ function main(argc: number, argv: string[]): number {
 //     }
 //   }
 
-  return u.dev[0x0f].val & 0x7f;
+return 0
+ // return u.dev[0x0f].val & 0x7f;
 }
 
 main(process.argv.length, process.argv)

@@ -1,4 +1,4 @@
-import { deo_mask, dei_mask } from './uxncli'
+import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxncli'
 import { Uint16, Uint8, u16FromNumbers, u8FromNumbers } from './tooling'
 
 export const PAGE_PROGRAM = 0x0100
@@ -14,11 +14,11 @@ export function PEEK2(d: Uint8[]): Uint8 {
 
 export class Stack {
     dat: Uint8[];
-    ptr: Uint8;
+    ptr: Uint16;
 
     constructor () {
-        this.dat = u8FromNumbers(new Array(255));
-        this.ptr = new Uint8(0);
+        this.dat = u8FromNumbers(new Array(255).fill(0));
+        this.ptr = new Uint16(0);
     }
 }
 
@@ -40,8 +40,6 @@ export class Uxn {
     }
 };
 
-declare function uxn_dei(u: Uxn, addr: number): number;
-declare function uxn_deo(u: Uxn, addr: number): void;
 declare function uxn_halt(u: Uxn, ins: number, err: number, addr: Uint16): number;
 
 export function uxn_eval(u: Uxn, pc: Uint16): number {
@@ -115,17 +113,17 @@ export function uxn_eval(u: Uxn, pc: Uint16): number {
         k = (ins & 0x80);
         s = ins & 0x40 ? u.rst : u.wst;
         opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
-        
+
         switch(opc) {
             /* IMM */
-            case 0x00: /* BRK   */ return 1;
-            case 0xff: /* JCI   */ pc.val += (s.dat[s.ptr.val--].val * PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case 0xfe: /* JMI   */ pc.val += (PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case 0xfd: /* JSI   */ PUSH2(u.rst, pc.val + 2); pc.val += (pc.val + PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case 0xfc: /* LIT   */ PUSH(s, u.ram[pc.val++].val); break;
-            case 0xfb: /* LIT2  */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
-            case 0xfa: /* LITr  */ PUSH(s, u.ram[pc.val++].val); break;
-            case 0xf9: /* LIT2r */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
+            case -0x00: /* BRK   */ return 1;
+            case -0x01: /* JCI   */ pc.val += (s.dat[s.ptr.val--].val * PEEK2(u.ram.slice(pc.val)).val + 2); break;
+            case -0x02: /* JMI   */ pc.val += (PEEK2(u.ram.slice(pc.val)).val + 2); break;
+            case -0x03: /* JSI   */ PUSH2(u.rst, pc.val + 2); pc.val += (pc.val + PEEK2(u.ram.slice(pc.val)).val + 2); break;
+            case -0x04: /* LIT   */ PUSH(s, u.ram[pc.val++].val); break;
+            case -0x05: /* LIT2  */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
+            case -0x06: /* LITr  */ PUSH(s, u.ram[pc.val++].val); break;
+            case -0x07: /* LIT2r */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
             /* ALU */
             case 0x01: /* INC  */ t = T(); SET(1, 0); PUT(0, t + 1); break;
             case 0x21:            t = T2(); SET(2, 0); PUT2(0, t + 1); break;

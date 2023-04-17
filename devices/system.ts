@@ -9,15 +9,11 @@ export function system_load(u: Uxn, filename: string): number {
     return 0;
   }
 
-  console.log(f.at(0))
-
-  u.ram = u8FromNumbers(new Array(2000))
+  u.ram = u8FromNumbers(new Array(2000).fill(0))
 
   for (let i = 0; i < f.length; i ++) {
     u.ram[PAGE_PROGRAM + i] = new Uint8(f.at(i) || 0)
   }
-
-  console.log(u.ram)
 
 //   let data = new Uint8Array();
 //   let l = f.copy(data, PAGE_PROGRAM, 0, 0x10000 - PAGE_PROGRAM);
