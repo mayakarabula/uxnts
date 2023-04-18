@@ -1,30 +1,29 @@
 import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxncli'
-import { Uint16, Uint8, u16FromNumbers, u8FromNumbers } from './tooling'
 
 export const PAGE_PROGRAM = 0x0100
 
-export function POKE2(d: Uint8[], v: number) {
-    d[0] = new Uint8(v >> 8);
-    d[1] = new Uint8(v);
+export function POKE2(d: number[], v: number) {
+    d[0] = (v >> 8);
+    d[1] = (v);
   }
 
-export function PEEK2(d: Uint8[]): Uint8 {
-    return new Uint8((d[0].val << 8) | d[1].val);
+export function PEEK2(d: number[]): number {
+    return ((d[0] << 8) | d[1]);
 }
 
 export class Stack {
-    dat: Uint8[];
-    ptr: Uint16;
+    dat: number[];
+    ptr: number;
 
     constructor () {
-        this.dat = u8FromNumbers(new Array(255).fill(0));
-        this.ptr = new Uint16(0);
+        this.dat = (new Array(255).fill(0));
+        this.ptr = 0;
     }
 }
 
 export class Uxn {
-    ram: Uint8[];
-    dev: Uint8[];
+    ram: number[];
+    dev: number[];
     wst: Stack;
     rst: Stack;
     dei: (u: Uxn, addr: number) => number;
@@ -32,7 +31,7 @@ export class Uxn {
 
     constructor (dei: any, deo: any) {
         this.ram = [];
-        this.dev = u8FromNumbers(new Array(256));
+        this.dev = (new Array(256));
         this.wst = new Stack();
         this.rst = new Stack();
         this.dei = dei;
@@ -40,9 +39,9 @@ export class Uxn {
     }
 };
 
-declare function uxn_halt(u: Uxn, ins: number, err: number, addr: Uint16): number;
+declare function uxn_halt(u: Uxn, ins: number, err: number, addr: number): number;
 
-export function uxn_eval(u: Uxn, pc: Uint16): number {
+export function uxn_eval(u: Uxn, pc: number): number {
     let ins: number, m2: number, opc: number, k: number;
     let t: number, n: number, l: number, tmp: number;
     let s: Stack = new Stack();
@@ -57,59 +56,59 @@ export function uxn_eval(u: Uxn, pc: Uint16): number {
     [   L2   ][   N2   ][   T2   ] <
 
     */
-    const T = () => s.dat[s.ptr.val - 1].val;
-    const N = () => s.dat[s.ptr.val - 2].val;
-    const L = () => s.dat[s.ptr.val - 3].val;
-    const H2 = () => (s.dat[s.ptr.val - 3].val << 8) | s.dat[s.ptr.val - 2].val;
-    const T2 = () => (s.dat[s.ptr.val - 2].val << 8) | s.dat[s.ptr.val - 1].val;
-    const N2 = () => (s.dat[s.ptr.val - 4].val << 8) | s.dat[s.ptr.val- 3].val;
-    const L2 = () => (s.dat[s.ptr.val - 6].val << 8) | s.dat[s.ptr.val - 5].val;
+    const T = () => s.dat[s.ptr - 1];
+    const N = () => s.dat[s.ptr - 2];
+    const L = () => s.dat[s.ptr - 3];
+    const H2 = () => (s.dat[s.ptr - 3] << 8) | s.dat[s.ptr - 2];
+    const T2 = () => (s.dat[s.ptr - 2] << 8) | s.dat[s.ptr - 1];
+    const N2 = () => (s.dat[s.ptr - 4] << 8) | s.dat[s.ptr- 3];
+    const L2 = () => (s.dat[s.ptr - 6] << 8) | s.dat[s.ptr - 5];
 
-    const HALT = (c: number): number => uxn_halt(u, ins, c, new Uint8(pc.val - 1));
+    const HALT = (c: number): number => uxn_halt(u, ins, c, (pc - 1));
     
     const SET = (mul: number, add: number): void => { 
-      if (mul > s.ptr.val) HALT(1);
-      tmp = (s.ptr.val + k * mul + add);
+      if (mul > s.ptr) HALT(1);
+      tmp = (s.ptr + k * mul + add);
       if (tmp > 254) HALT(2);
-      s.ptr = new Uint16(tmp); 
+      s.ptr = (tmp); 
     };
 
     const PUT = (offset: number, value: number) => { 
-      s.dat[s.ptr.val - 1 - offset] = new Uint8(value); 
+      s.dat[s.ptr - 1 - offset] = (value); 
     };
 
     const PUT2 = (offset: number, value: number) => {
       const tmp = value; 
-      s.dat[s.ptr.val - offset - 2] = new Uint8(tmp >> 8);
-      s.dat[s.ptr.val - offset - 1] = new Uint8(tmp); 
+      s.dat[s.ptr - offset - 2] = (tmp >> 8);
+      s.dat[s.ptr - offset - 1] = (tmp); 
     }
 
     const PUSH = (x: Stack, value: number) => { 
       z = x;
-      if (z.ptr.val > 254) HALT(2);
-      z.dat[z.ptr.val++] = new Uint8(value); 
+      if (z.ptr > 254) HALT(2);
+      z.dat[z.ptr++] = (value); 
     }
 
     const PUSH2 = (x: Stack, value: number) => { 
       z = x;
-      if(s.ptr.val > 253) HALT(2);
+      if(s.ptr > 253) HALT(2);
       tmp = value; 
-      z.dat[z.ptr.val] = new Uint8(tmp >> 8);
-      z.dat[z.ptr.val + 1] = new Uint8(tmp);
-      z.ptr.val += 2; 
+      z.dat[z.ptr] = (tmp >> 8);
+      z.dat[z.ptr + 1] = (tmp);
+      z.ptr += 2; 
     }
 
     const DEO = (address: number, value: number) => {
-      u.dev[address] = new Uint8(value);
-      if ((deo_mask[address >> 4].val >> (address & 0xf)) & 0x1) uxn_deo(u, address);
+      u.dev[address] = (value);
+      if ((deo_mask[address >> 4] >> (address & 0xf)) & 0x1) uxn_deo(u, address);
     }
 
     const DEI = (address: number, value: number) => {
-      PUT(address, ((dei_mask[value >> 4].val >> (value & 0xf)) & 0x1) ? uxn_dei(u, value) : u.dev[value].val);
+      PUT(address, ((dei_mask[value >> 4] >> (value & 0xf)) & 0x1) ? uxn_dei(u, value) : u.dev[value]);
     }
 
     for(;;) {
-        ins = (u.ram[pc.val++].val & 0xff);
+        ins = (u.ram[pc++] & 0xff);
         k = (ins & 0x80);
         s = ins & 0x40 ? u.rst : u.wst;
         opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
@@ -117,13 +116,13 @@ export function uxn_eval(u: Uxn, pc: Uint16): number {
         switch(opc) {
             /* IMM */
             case -0x00: /* BRK   */ return 1;
-            case -0x01: /* JCI   */ pc.val += (s.dat[s.ptr.val--].val * PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case -0x02: /* JMI   */ pc.val += (PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case -0x03: /* JSI   */ PUSH2(u.rst, pc.val + 2); pc.val += (pc.val + PEEK2(u.ram.slice(pc.val)).val + 2); break;
-            case -0x04: /* LIT   */ PUSH(s, u.ram[pc.val++].val); break;
-            case -0x05: /* LIT2  */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
-            case -0x06: /* LITr  */ PUSH(s, u.ram[pc.val++].val); break;
-            case -0x07: /* LIT2r */ PUSH2(s, PEEK2(u.ram.slice(pc.val)).val); pc.val += 2; break;
+            case -0x01: /* JCI   */ pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
+            case -0x02: /* JMI   */ pc += (PEEK2(u.ram.slice(pc)) + 2); break;
+            case -0x03: /* JSI   */ PUSH2(u.rst, pc + 2); pc += (pc + PEEK2(u.ram.slice(pc)) + 2); break;
+            case -0x04: /* LIT   */ PUSH(s, u.ram[pc++]); break;
+            case -0x05: /* LIT2  */ PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
+            case -0x06: /* LITr  */ PUSH(s, u.ram[pc++]); break;
+            case -0x07: /* LIT2r */ PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
             /* ALU */
             case 0x01: /* INC  */ t = T(); SET(1, 0); PUT(0, t + 1); break;
             case 0x21:            t = T2(); SET(2, 0); PUT2(0, t + 1); break;
@@ -147,25 +146,25 @@ export function uxn_eval(u: Uxn, pc: Uint16): number {
             case 0x2a:            t = T2(); n = N2(); SET(4, -3); PUT(0, n > t ? 1 : 0); break;
             case 0x0b: /* LTH  */ t = T(); n = N(); SET(2, -1); PUT(0, n < t ? 1 : 0); break;
             case 0x2b:            t = T2(); n = N2(); SET(4, -3); PUT(0, n < t ? 1 : 0); break;
-            case 0x0c: /* JMP  */ t = T(); SET(1, -1); pc.val += t; break;
-            case 0x2c:            t = T2(); SET(2, -2); pc.val = t; break;
-            case 0x0d: /* JCN  */ t = T(); n = N(); SET(2, -2); pc.val += n * t; break;
-            case 0x2d:            t = T2(); n = L(); SET(3, -3); if(n) pc.val = t; break;
-            case 0x0e: /* JSR  */ t = T(); SET(1, -1); PUSH2(u.rst, pc.val); pc.val += t; break;
-            case 0x2e:            t = T2(); SET(2, -2); PUSH2(u.rst, pc.val); pc.val = t; break;
+            case 0x0c: /* JMP  */ t = T(); SET(1, -1); pc += t; break;
+            case 0x2c:            t = T2(); SET(2, -2); pc = t; break;
+            case 0x0d: /* JCN  */ t = T(); n = N(); SET(2, -2); pc += n * t; break;
+            case 0x2d:            t = T2(); n = L(); SET(3, -3); if(n) pc = t; break;
+            case 0x0e: /* JSR  */ t = T(); SET(1, -1); PUSH2(u.rst, pc); pc += t; break;
+            case 0x2e:            t = T2(); SET(2, -2); PUSH2(u.rst, pc); pc = t; break;
             case 0x0f: /* STH  */ t = T(); SET(1, -1); PUSH((ins & 0x40 ? u.wst : u.rst), t); break;
             case 0x2f:            t = T2(); SET(2, -2); PUSH2((ins & 0x40 ? u.wst : u.rst), t); break;
-            case 0x10: /* LDZ  */ t = T(); SET(1, 0); PUT(0, u.ram[t].val); break;
-            case 0x30:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t)).val); break;
-            case 0x11: /* STZ  */ t = T(); n = N(); SET(2,-2); u.ram[t] = new Uint8(n); break;
+            case 0x10: /* LDZ  */ t = T(); SET(1, 0); PUT(0, u.ram[t]); break;
+            case 0x30:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t))); break;
+            case 0x11: /* STZ  */ t = T(); n = N(); SET(2,-2); u.ram[t] = (n); break;
             case 0x31:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram.slice(t), n); break;
-            case 0x12: /* LDR  */ t = T(); SET(1, 0); PUT(0, u.ram[pc.val + t].val); break;
-            case 0x32:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(pc.val + t)).val); break;
-            case 0x13: /* STR  */ t = T(); n = N(); SET(2,-2); u.ram[pc.val + t] = new Uint8(n); break;
-            case 0x33:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram.slice(pc.val + t), n); break;
-            case 0x14: /* LDA  */ t = T2(); SET(2,-1); PUT(0, u.ram[t].val); break;
-            case 0x34:            t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t)).val); break;
-            case 0x15: /* STA  */ t = T2(); n = L(); SET(3,-3); u.ram[t] = new Uint8(n); break;
+            case 0x12: /* LDR  */ t = T(); SET(1, 0); PUT(0, u.ram[pc + t]); break;
+            case 0x32:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(pc + t))); break;
+            case 0x13: /* STR  */ t = T(); n = N(); SET(2,-2); u.ram[pc + t] = (n); break;
+            case 0x33:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram.slice(pc + t), n); break;
+            case 0x14: /* LDA  */ t = T2(); SET(2,-1); PUT(0, u.ram[t]); break;
+            case 0x34:            t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t))); break;
+            case 0x15: /* STA  */ t = T2(); n = L(); SET(3,-3); u.ram[t] = (n); break;
             case 0x35:            t = T2(); n = N2(); SET(4,-4); POKE2(u.ram.slice(t), n); break;
             case 0x16: /* DEI  */ t = T(); SET(1, 0); DEI(0, t); break;
             case 0x36:            t = T(); SET(1, 1); DEI(1, t); DEI(0, t + 1); break;
@@ -191,7 +190,7 @@ export function uxn_eval(u: Uxn, pc: Uint16): number {
       }
 }
 
-export function uxn_boot(u: Uxn, ram: Uint8[])
+export function uxn_boot(u: Uxn, ram: number[])
 {
 	u.ram = ram;
 

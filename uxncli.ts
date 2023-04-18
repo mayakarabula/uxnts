@@ -1,11 +1,10 @@
 import { system_load } from "./devices/system";
-import { u16FromNumbers, u8FromNumbers, Uint16, Uint8 } from "./tooling";
 import { Uxn, PEEK2, uxn_eval, uxn_boot, PAGE_PROGRAM } from './uxn'
 
 export const RAM_PAGES = 0x10
 
-export const deo_mask: Uint16[] = u16FromNumbers([0x6a08, 0x0300, 0xc028, 0x8000, 0x8000, 0x8000, 0x8000, 0x0000, 0x0000, 0x0000, 0xa260, 0xa260, 0x0000, 0x0000, 0x0000, 0x0000])
-export const dei_mask: Uint16[] = u16FromNumbers([0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x07ff, 0x0000, 0x0000, 0x0000])
+export const deo_mask: number[] = ([0x6a08, 0x0300, 0xc028, 0x8000, 0x8000, 0x8000, 0x8000, 0x0000, 0x0000, 0x0000, 0xa260, 0xa260, 0x0000, 0x0000, 0x0000, 0x0000])
+export const dei_mask: number[] = ([0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x07ff, 0x0000, 0x0000, 0x0000])
 
 function emu_error(msg: string, err: string): number {
   console.log(`Error ${msg}: ${err}`);
@@ -18,10 +17,10 @@ function emu_error(msg: string, err: string): number {
 //   return uxn_eval(u, PEEK2(u.dev.slice(0x10)));
 // }
 
-function console_deo(d: Uint8[], port: number): void {
+function console_deo(d: number[], port: number): void {
   switch (port) {
     case 0x8:
-      process.stdout.write(String.fromCharCode(d[port].val));
+      process.stdout.write(String.fromCharCode(d[port]));
       return;
     case 0x9:
       console.error('error !!', d[port]);
@@ -34,7 +33,7 @@ export function uxn_dei(u: Uxn, addr: number): number {
     //case 0xc0:
      // return datetime_dei(u, addr);
     default:
-      return u.dev[addr].val;
+      return u.dev[addr];
   }
 }
 
@@ -67,7 +66,7 @@ function main(argc: number, argv: string[]): number {
     return emu_error("Usage", "uxncli game.rom args");
   }
 
-  if (!uxn_boot(u, u8FromNumbers(new Array(0x10000 * RAM_PAGES).fill(0)))) {
+  if (!uxn_boot(u, (new Array(0x10000 * RAM_PAGES).fill(0)))) {
     return emu_error("Boot", "Failed");
   }
 
@@ -77,8 +76,8 @@ function main(argc: number, argv: string[]): number {
     return emu_error("Load", "Failed");
   }
 
-  if (!uxn_eval(u, new Uint16(PAGE_PROGRAM))) {
-    return u.dev[0x0f].val & 0x7f;
+  if (!uxn_eval(u, (PAGE_PROGRAM))) {
+    return u.dev[0x0f] & 0x7f;
   }
 
 //   for (i = 2; i < argc; i++) {
