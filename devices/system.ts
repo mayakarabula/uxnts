@@ -1,9 +1,11 @@
 import { PAGE_PROGRAM , Uxn} from '../uxn'
 import { RAM_PAGES } from '../uxncli'
-import { readFileSync } from 'fs';
+// import { readFileSync } from 'fs';
 
 export function system_load(u: Uxn, filename: string): number {
-  const f = readFileSync(filename);
+  //const f = readFileSync(filename);
+  const f = [128, 104, 128, 24, 23, 128, 101, 128, 24, 23, 128, 108, 128, 24, 23, 128, 108, 128, 24, 23, 128, 111, 128, 24, 23, 128, 10, 128, 24, 23];
+
   if (!f) {
     return 0;
   }

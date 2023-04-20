@@ -20,7 +20,7 @@ function emu_error(msg: string, err: string): number {
 function console_deo(d: number[], port: number): void {
   switch (port) {
     case 0x8:
-      process.stdout.write(String.fromCharCode(d[port]));
+      console.log(String.fromCharCode(d[port]));
       return;
     case 0x9:
       console.error('error !!', d[port]);
@@ -70,8 +70,6 @@ function main(argc: number, argv: string[]): number {
     return emu_error("Boot", "Failed");
   }
 
-  console.log(argv[2])
-
   if (!system_load(u, argv[2])) {
     return emu_error("Load", "Failed");
   }
@@ -99,4 +97,5 @@ return 0
  // return u.dev[0x0f].val & 0x7f;
 }
 
-main(process.argv.length, process.argv)
+// main(process.argv.length, process.argv)
+main(3,[])
