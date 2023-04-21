@@ -5,11 +5,57 @@
       requirejs.config({
         baseUrl: '',
         paths: {
-          'uxncli': 'bundle'
+          'uxnemu': 'bundle'
         }
       });
 
       // Load the entry module
-      requirejs(['uxncli']);
+      requirejs(['uxnemu']);
     </script>
+
+   <body>
+    <div class="out" id="out">
+      <pre class="stdlabel">UXN ts</pre>
+      <span class="stdout-label">stdout:</span>
+      <pre id="stdout"></pre>
+      <span class="stderr-label">stderr:</span>
+      <pre id="stderr"></pre>
+    </div>
+
+    <canvas width="512" height="320" id="canvas">
+    </canvas>
+
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .out {
+        background-color: #282a36;
+        padding: 1em;
+        border-radius: 10px;
+        margin: 1em;
+        color: white;
+        font-family: monospace;
+      }
+
+      #canvas {
+        margin: 0 auto;
+        border: 2px solid #282a36;
+      }
+
+      .stdout-label {
+        color: #9aedf7;
+      }
+
+      .stderr-label {
+        color: #ff91d1;
+      }
+      
+      #stdout, #stderr {
+        display: block;
+      }
+    </style>
+   </body>
 </html>

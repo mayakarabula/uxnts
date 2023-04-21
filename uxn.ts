@@ -1,10 +1,11 @@
-import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxncli'
+import { uxn_halt } from './devices/system';
+import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxnemu'
 
 export const PAGE_PROGRAM = 0x0100
 
-export function POKE2(d: number[], v: number) {
-    d[0] = (v >> 8);
-    d[1] = (v);
+export function POKE2(d: number[], addr: number, v: number) {
+    d[addr] = (v >> 8);
+    d[addr + 1] = (v);
   }
 
 export function PEEK2(d: number[]): number {
@@ -38,8 +39,6 @@ export class Uxn {
         this.deo = deo;
     }
 };
-
-declare function uxn_halt(u: Uxn, ins: number, err: number, addr: number): number;
 
 export function uxn_eval(u: Uxn, pc: number): number {
     let ins: number, m2: number, opc: number, k: number;
@@ -157,15 +156,15 @@ export function uxn_eval(u: Uxn, pc: number): number {
             case 0x10: /* LDZ  */ t = T(); SET(1, 0); PUT(0, u.ram[t]); break;
             case 0x30:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t))); break;
             case 0x11: /* STZ  */ t = T(); n = N(); SET(2,-2); u.ram[t] = (n); break;
-            case 0x31:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram.slice(t), n); break;
+            case 0x31:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram, t, n); break;
             case 0x12: /* LDR  */ t = T(); SET(1, 0); PUT(0, u.ram[pc + t]); break;
             case 0x32:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(pc + t))); break;
             case 0x13: /* STR  */ t = T(); n = N(); SET(2,-2); u.ram[pc + t] = (n); break;
-            case 0x33:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram.slice(pc + t), n); break;
+            case 0x33:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram, (pc + t), n); break;
             case 0x14: /* LDA  */ t = T2(); SET(2,-1); PUT(0, u.ram[t]); break;
             case 0x34:            t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t))); break;
             case 0x15: /* STA  */ t = T2(); n = L(); SET(3,-3); u.ram[t] = (n); break;
-            case 0x35:            t = T2(); n = N2(); SET(4,-4); POKE2(u.ram.slice(t), n); break;
+            case 0x35:            t = T2(); n = N2(); SET(4,-4); POKE2(u.ram, (t), n); break;
             case 0x16: /* DEI  */ t = T(); SET(1, 0); DEI(0, t); break;
             case 0x36:            t = T(); SET(1, 1); DEI(1, t); DEI(0, t + 1); break;
             case 0x17: /* DEO  */ t = T(); n = N(); SET(2,-2); DEO(t, n); break;
