@@ -4,4 +4,6 @@ const file = (process.argv[2])
 
 const rom = [...readFileSync(file)]
 
-writeFileSync('output', rom.join(','))
+writeFileSync('output.js', `
+window.rom = [${rom.join(',')}];
+`)
