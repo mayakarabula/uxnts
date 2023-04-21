@@ -69,6 +69,9 @@ export function uxn_deo(u: Uxn, addr: number): void {
 function draw () {
   const canvas = document.getElementById('canvas') as HTMLCanvasElement
 
+  canvas.width = uxn_screen.width
+  canvas.height = uxn_screen.height
+
   if (canvas) {
     const ctx = canvas.getContext('2d')
 
@@ -101,9 +104,11 @@ function main(): number {
     return emu_error("Load", "Failed");
   }
 
-  if (!uxn_eval(u, (PAGE_PROGRAM))) {    
+  if (!uxn_eval(u, (PAGE_PROGRAM))) {
     return u.dev[0x0f] & 0x7f;
   }
+
+  console.log({ u, uxn_screen })
 
   draw()
 

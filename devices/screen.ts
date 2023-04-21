@@ -112,6 +112,8 @@ function screen_resize(p: UxnScreen, width: number, height: number)
     p.height = height;
     screen_fill(p, p.bg, 0, 0, p.width, p.height, 0);
     screen_fill(p, p.fg, 0, 0, p.width, p.height, 0);
+
+    console.log('resize', p)
 }
 
 function screen_redraw(p: UxnScreen)
@@ -156,6 +158,7 @@ export function screen_dei(u: Uxn, addr: number)
 
 export function screen_deo(ram: number[], d: number[], port: number)
 {
+    console.log('SCREN DEO', port)
 	switch(port) {
 	case 0x3:
 		if(!FIXED_SIZE)
