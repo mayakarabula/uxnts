@@ -108,7 +108,9 @@ function main(): number {
     return u.dev[0x0f] & 0x7f;
   }
 
-  console.log({ u, uxn_screen })
+  const screen_vector = PEEK2(u.dev.slice(0x20));
+
+  uxn_eval(u, screen_vector)
 
   draw()
 

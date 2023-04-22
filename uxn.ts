@@ -112,7 +112,7 @@ export function uxn_eval(u: Uxn, pc: number): number {
         s = ins & 0x40 ? u.rst : u.wst;
         opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
 
-        console.log(opc, opc.toString(16))
+        console.log(pc, opc, opc.toString(16))
         
         switch(opc) {
             /* IMM */

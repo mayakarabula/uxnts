@@ -80,6 +80,8 @@ export function uxn_halt(u: Uxn, instr: number, err: number, addr: number)
 	const d = u.dev.slice(0x00);
 	const handler = PEEK2(d);
 
+  console.log('HALT', d, handler)
+
 	if(handler) {
 		u.wst.ptr = 4;
 		u.wst.dat[0] = addr >> 0x8;
