@@ -1,4 +1,5 @@
 import { uxn_halt } from './devices/system';
+import { base, keepFlag, opCodes, returnFlag, shortFlag } from './opCodes';
 import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxnemu'
 
 export const PAGE_PROGRAM = 0x0100
@@ -41,7 +42,7 @@ export class Uxn {
 };
 
 export function uxn_eval(u: Uxn, pc: number): number {
-    let ins: number, m2: number, opc: number, k: number;
+    let ins: number, m2: number, k: number;
     let t: number, n: number, l: number, tmp: number;
     let s: Stack = new Stack();
     let z: Stack = new Stack();
@@ -107,88 +108,96 @@ export function uxn_eval(u: Uxn, pc: number): number {
     }
 
     for(;;) {
-        ins = (u.ram[pc++] & 0xff);
-        k = (ins & 0x80);
-        s = ins & 0x40 ? u.rst : u.wst;
-        opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
+      ins = (u.ram[pc++] & 0xff);
+      k = keepFlag(ins) //(ins & 0x80);
+      s = returnFlag(ins) ? u.rst : u.wst // s = ins & 0x40 ? u.rst : u.wst;
+      // opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
 
-        console.log(pc, opc, opc.toString(16))
-        
-        switch(opc) {
-            /* IMM */
-            case -0x00: /* BRK   */ return 1;
-            case -0x01: /* JCI   */ pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
-            case -0x02: /* JMI   */ pc += (PEEK2(u.ram.slice(pc)) + 2); break;
-            case -0x03: /* JSI   */ PUSH2(u.rst, pc + 2); pc += (pc + PEEK2(u.ram.slice(pc)) + 2); break;
-            case -0x04: /* LIT   */ PUSH(s, u.ram[pc++]); break;
-            case -0x05: /* LIT2  */ PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
-            case -0x06: /* LITr  */ PUSH(s, u.ram[pc++]); break;
-            case -0x07: /* LIT2r */ PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
-            /* ALU */
-            case 0x01: /* INC  */ t = T(); SET(1, 0); PUT(0, t + 1); break;
-            case 0x21:            t = T2(); SET(2, 0); PUT2(0, t + 1); break;
-            case 0x02: /* POP  */ SET(1, -1); break;
-            case 0x22:            SET(2, -2); break;
-            case 0x03: /* NIP  */ t = T(); SET(2, -1); PUT(0, t); break;
-            case 0x23:            t = T2(); SET(4, -2); PUT2(0, t); break;
-            case 0x04: /* SWP  */ t = T(); n = N(); SET(2, 0); PUT(0, n); PUT(1, t); break;
-            case 0x24:            t = T2(); n = N2(); SET(4, 0); PUT2(0, n); PUT2(2, t); break;
-            case 0x05: /* ROT  */ t = T(); n = N(); l = L(); SET(3, 0); PUT(0, l); PUT(1, t); PUT(2, n); break;
-            case 0x25:            t = T2(); n = N2(); l = L2(); SET(6, 0); PUT2(0, l); PUT2(2, t); PUT2(4, n); break;
-            case 0x06: /* DUP  */ t = T(); SET(1, 1); PUT(0, t); PUT(1, t); break;
-            case 0x26:            t = T2(); SET(2, 2); PUT2(0, t); PUT2(2, t); break;
-            case 0x07: /* OVR  */ t = T(); n = N(); SET(2, 1); PUT(0, n); PUT(1, t); PUT(2, n); break;
-            case 0x27:            t = T2(); n = N2(); SET(4, 2); PUT2(0, n); PUT2(2, t); PUT2(4, n); break;
-            case 0x08: /* EQU  */ t = T(); n = N(); SET(2, -1); PUT(0, n == t ? 1 : 0); break;
-            case 0x28:            t = T2(); n = N2(); SET(4, -3); PUT(0, n == t ? 1 : 0); break;
-            case 0x09: /* NEQ  */ t = T(); n = N(); SET(2, -1); PUT(0, n != t ? 0 : 1); break;
-            case 0x29:            t = T2(); n = N2(); SET(4, -3); PUT(0, n != t ? 1 : 0); break;
-            case 0x0a: /* GTH  */ t = T(); n = N(); SET(2, -1); PUT(0, n > t ? 1 : 0); break;
-            case 0x2a:            t = T2(); n = N2(); SET(4, -3); PUT(0, n > t ? 1 : 0); break;
-            case 0x0b: /* LTH  */ t = T(); n = N(); SET(2, -1); PUT(0, n < t ? 1 : 0); break;
-            case 0x2b:            t = T2(); n = N2(); SET(4, -3); PUT(0, n < t ? 1 : 0); break;
-            case 0x0c: /* JMP  */ t = T(); SET(1, -1); pc += t; break;
-            case 0x2c:            t = T2(); SET(2, -2); pc = t; break;
-            case 0x0d: /* JCN  */ t = T(); n = N(); SET(2, -2); pc += n * t; break;
-            case 0x2d:            t = T2(); n = L(); SET(3, -3); if(n) pc = t; break;
-            case 0x0e: /* JSR  */ t = T(); SET(1, -1); PUSH2(u.rst, pc); pc += t; break;
-            case 0x2e:            t = T2(); SET(2, -2); PUSH2(u.rst, pc); pc = t; break;
-            case 0x0f: /* STH  */ t = T(); SET(1, -1); PUSH((ins & 0x40 ? u.wst : u.rst), t); break;
-            case 0x2f:            t = T2(); SET(2, -2); PUSH2((ins & 0x40 ? u.wst : u.rst), t); break;
-            case 0x10: /* LDZ  */ t = T(); SET(1, 0); PUT(0, u.ram[t]); break;
-            case 0x30:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t))); break;
-            case 0x11: /* STZ  */ t = T(); n = N(); SET(2,-2); u.ram[t] = (n); break;
-            case 0x31:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram, t, n); break;
-            case 0x12: /* LDR  */ t = T(); SET(1, 0); PUT(0, u.ram[pc + t]); break;
-            case 0x32:            t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(pc + t))); break;
-            case 0x13: /* STR  */ t = T(); n = N(); SET(2,-2); u.ram[pc + t] = (n); break;
-            case 0x33:            t = T(); n = H2(); SET(3,-3); POKE2(u.ram, (pc + t), n); break;
-            case 0x14: /* LDA  */ t = T2(); SET(2,-1); PUT(0, u.ram[t]); break;
-            case 0x34:            t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t))); break;
-            case 0x15: /* STA  */ t = T2(); n = L(); SET(3,-3); u.ram[t] = (n); break;
-            case 0x35:            t = T2(); n = N2(); SET(4,-4); POKE2(u.ram, (t), n); break;
-            case 0x16: /* DEI  */ t = T(); SET(1, 0); DEI(0, t); break;
-            case 0x36:            t = T(); SET(1, 1); DEI(1, t); DEI(0, t + 1); break;
-            case 0x17: /* DEO  */ t = T(); n = N(); SET(2,-2); DEO(t, n); break;
-            case 0x37:            t = T(); n = N(); l = L(); SET(3,-3); DEO(t, l); DEO(t + 1, n); break;
-            case 0x18: /* ADD  */ t = T(); n = N(); SET(2,-1); PUT(0, n + t); break;
-            case 0x38:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n + t); break;
-            case 0x19: /* SUB  */ t = T(); n = N(); SET(2,-1); PUT(0, n - t); break;
-            case 0x39:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n - t); break;
-            case 0x1a: /* MUL  */ t = T(); n = N(); SET(2,-1); PUT(0, n * t); break;
-            case 0x3a:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n * t); break;
-            case 0x1b: /* DIV  */ t = T(); n = N(); SET(2,-1); if(!t) HALT(3); PUT(0, n / t); break;
-            case 0x3b:            t = T2(); n = N2(); SET(4,-2); if(!t) HALT(3); PUT2(0, n / t); break;
-            case 0x1c: /* AND */  t = T(); n = N(); SET(2,-1); PUT(0, n & t); break;
-            case 0x3c:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n & t); break;
-            case 0x1d: /* ORA */  t = T(); n = N(); SET(2,-1); PUT(0, n | t); break;
-            case 0x3d:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n | t); break;
-            case 0x1e: /* EOR */  t = T(); n = N(); SET(2,-1); PUT(0, n ^ t); break;
-            case 0x3e:            t = T2(); n = N2(); SET(4,-2); PUT2(0, n ^ t); break;
-            case 0x1f: /* SFT */  t = T(); n = N(); SET(2,-1); PUT(0, n >> (t & 0xf) << (t >> 4)); break;
-            case 0x3f:            t = T(); n = H2(); SET(3,-1); PUT2(0, n >> (t & 0xf) << (t >> 4)); break;
-          }
+      console.log({ ins, opCodes, op: opCodes[ins], base: base(ins), baseOp: opCodes[base(ins) || 0] })
+
+      switch (ins) {
+        case opCodes.BRK:     return 1
+        case opCodes.JCI:     pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
+        case opCodes.JMI:     pc += (PEEK2(u.ram.slice(pc)) + 2); break;
+        case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (pc + PEEK2(u.ram.slice(pc)) + 2); break;
+        case opCodes.LIT:     PUSH(s, u.ram[pc++]); break;
+        case opCodes.LIT2:    PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
+        case opCodes.LITr:    PUSH(s, u.ram[pc++]); break;
+        case opCodes.LIT2r:   PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
       }
+
+      const short = shortFlag(ins)
+
+      if (short) {
+        switch (base(ins)) {
+          case opCodes.INC:     t = T(); SET(1, 0); PUT(0, t + 1); break;
+          case opCodes.POP:     SET(1, -1); break;
+          case opCodes.NIP:     t = T(); SET(2, -1); PUT(0, t); break;
+          case opCodes.SWP:     t = T(); n = N(); SET(2, 0); PUT(0, n); PUT(1, t); break;
+          case opCodes.ROT:     t = T(); n = N(); l = L(); SET(3, 0); PUT(0, l); PUT(1, t); PUT(2, n); break;
+          case opCodes.DUP:     t = T(); SET(1, 1); PUT(0, t); PUT(1, t); break;          
+          case opCodes.OVR:     t = T(); n = N(); SET(2, 1); PUT(0, n); PUT(1, t); PUT(2, n); break;
+          case opCodes.EQU:     t = T(); n = N(); SET(2, -1); PUT(0, n == t ? 1 : 0); break;
+          case opCodes.NEQ:     t = T(); n = N(); SET(2, -1); PUT(0, n != t ? 0 : 1); break;
+          case opCodes.GTH:     t = T(); n = N(); SET(2, -1); PUT(0, n > t ? 1 : 0); break;
+          case opCodes.LTH:     t = T(); n = N(); SET(2, -1); PUT(0, n < t ? 1 : 0); break;
+          case opCodes.JMP:     t = T(); SET(1, -1); pc += t; break;
+          case opCodes.JCN:     t = T(); n = N(); SET(2, -2); pc += n * t; break;
+          case opCodes.JSR:     t = T(); SET(1, -1); PUSH2(u.rst, pc); pc += t; break;
+          case opCodes.STH:     t = T(); SET(1, -1); PUSH((ins & 0x40 ? u.wst : u.rst), t); break;
+          case opCodes.LDZ:     t = T(); SET(1, 0); PUT(0, u.ram[t]); break;
+          case opCodes.STZ:     t = T(); n = N(); SET(2,-2); u.ram[t] = (n); break;
+          case opCodes.LDR:     t = T(); SET(1, 0); PUT(0, u.ram[pc + t]); break;
+          case opCodes.STR:     t = T(); n = N(); SET(2,-2); u.ram[pc + t] = (n); break;
+          case opCodes.LDA:     t = T2(); SET(2,-1); PUT(0, u.ram[t]); break;
+          case opCodes.STA:     t = T2(); n = L(); SET(3,-3); u.ram[t] = (n); break;
+          case opCodes.DEI:     t = T(); SET(1, 0); DEI(0, t); break;
+          case opCodes.DEO:     t = T(); n = N(); SET(2,-2); DEO(t, n); break;
+          case opCodes.ADD:     t = T(); n = N(); SET(2,-1); PUT(0, n + t); break;
+          case opCodes.SUB:     t = T(); n = N(); SET(2,-1); PUT(0, n - t); break;
+          case opCodes.MUL:     t = T(); n = N(); SET(2,-1); PUT(0, n * t); break;
+          case opCodes.DIV:     t = T(); n = N(); SET(2,-1); if(!t) HALT(3); PUT(0, n / t); break;
+          case opCodes.AND:     t = T(); n = N(); SET(2,-1); PUT(0, n & t); break;
+          case opCodes.ORA:     t = T(); n = N(); SET(2,-1); PUT(0, n | t); break;
+          case opCodes.EOR:     t = T(); n = N(); SET(2,-1); PUT(0, n ^ t); break;
+          case opCodes.SFT:     t = T(); n = N(); SET(2,-1); PUT(0, n >> (t & 0xf) << (t >> 4)); break;
+        }
+      } else {
+        switch (base(ins)) {
+          case opCodes.INC:     t = T2(); SET(2, 0); PUT2(0, t + 1); break;
+          case opCodes.POP:     SET(2, -2); break;
+          case opCodes.NIP:     t = T2(); SET(4, -2); PUT2(0, t); break;
+          case opCodes.SWP:     t = T2(); n = N2(); SET(4, 0); PUT2(0, n); PUT2(2, t); break;
+          case opCodes.ROT:     t = T2(); n = N2(); l = L2(); SET(6, 0); PUT2(0, l); PUT2(2, t); PUT2(4, n); break;
+          case opCodes.DUP:     t = T2(); SET(2, 2); PUT2(0, t); PUT2(2, t); break;   
+          case opCodes.OVR:     t = T2(); n = N2(); SET(4, 2); PUT2(0, n); PUT2(2, t); PUT2(4, n); break;
+          case opCodes.EQU:     t = T2(); n = N2(); SET(4, -3); PUT(0, n == t ? 1 : 0); break;
+          case opCodes.NEQ:     t = T2(); n = N2(); SET(4, -3); PUT(0, n != t ? 1 : 0); break;
+          case opCodes.GTH:     t = T2(); n = N2(); SET(4, -3); PUT(0, n > t ? 1 : 0); break;
+          case opCodes.LTH:     t = T2(); n = N2(); SET(4, -3); PUT(0, n < t ? 1 : 0); break;
+          case opCodes.JMP:     t = T2(); SET(2, -2); pc = t; break;
+          case opCodes.JCN:     t = T2(); n = L(); SET(3, -3); if(n) pc = t; break;
+          case opCodes.JSR:     t = T2(); SET(2, -2); PUSH2(u.rst, pc); pc = t; break;
+          case opCodes.STH:     t = T2(); SET(2, -2); PUSH2((ins & 0x40 ? u.wst : u.rst), t); break;
+          case opCodes.LDZ:     t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t))); break;
+          case opCodes.STZ:     t = T(); n = H2(); SET(3,-3); POKE2(u.ram, t, n); break;
+          case opCodes.LDR:     t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(pc + t))); break;
+          case opCodes.STR:     t = T(); n = H2(); SET(3,-3); POKE2(u.ram, (pc + t), n); break;
+          case opCodes.LDA:     t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t))); break;
+          case opCodes.STA:     t = T2(); n = N2(); SET(4,-4); POKE2(u.ram, (t), n); break;
+          case opCodes.DEI:     t = T(); SET(1, 1); DEI(1, t); DEI(0, t + 1); break;
+          case opCodes.DEO:     t = T(); n = N(); l = L(); SET(3,-3); DEO(t, l); DEO(t + 1, n); break;
+          case opCodes.ADD:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n + t); break;
+          case opCodes.SUB:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n - t); break;
+          case opCodes.MUL:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n * t); break;
+          case opCodes.DIV:     t = T2(); n = N2(); SET(4,-2); if(!t) HALT(3); PUT2(0, n / t); break;
+          case opCodes.AND:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n & t); break;
+          case opCodes.ORA:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n | t); break;
+          case opCodes.EOR:     t = T2(); n = N2(); SET(4,-2); PUT2(0, n ^ t); break;
+          case opCodes.SFT:     t = T(); n = H2(); SET(3,-1); PUT2(0, n >> (t & 0xf) << (t >> 4)); break;
+        }
+      }
+    }
 }
 
 export function uxn_boot(u: Uxn, ram: number[])
