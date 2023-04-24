@@ -117,9 +117,25 @@ export function uxn_eval(u: Uxn, pc: number): number {
 
       switch (ins) {
         case opCodes.BRK:     return 1
-        case opCodes.JCI:     pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
-        case opCodes.JMI:     pc += (PEEK2(u.ram.slice(pc)) + 2); break;
-        case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (PEEK2(u.ram.slice(pc)) + 2); break;
+        case opCodes.JCI: 
+        case opCodes.JMI:
+        case opCodes.JSI:
+          pc += 2
+          
+          console.log(PEEK2(u.ram.slice(pc)).toString(16))
+
+          if (ins === opCodes.JCI && PEEK2(u.ram.slice(pc)) === 0) {
+            break;
+          }
+          if (ins === opCodes.JSI) {
+            PUSH2(u.rst, pc)
+          }
+          pc += PEEK2(u.ram.slice(pc - 2))
+
+          break
+        // case opCodes.JCI:     pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
+        // case opCodes.JMI:     pc += (PEEK2(u.ram.slice(pc)) + 2); break;
+        // case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (PEEK2(u.ram.slice(pc)) + 2); break;
         case opCodes.LIT:     PUSH(s, u.ram[pc++]); break;
         case opCodes.LIT2:    PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
         case opCodes.LITr:    PUSH(s, u.ram[pc++]); break;

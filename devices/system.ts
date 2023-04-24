@@ -49,7 +49,7 @@ export function system_load(u: Uxn): number {
     return 0;
   }
 
-  u.ram = (new Array(2000).fill(0))
+  u.ram = (new Array(0x100000).fill(0))
 
   for (let i = 0; i < f.length; i ++) {
     u.ram[PAGE_PROGRAM + i] = (f.at(i) || 0)
