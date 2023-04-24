@@ -109,17 +109,17 @@ export function uxn_eval(u: Uxn, pc: number): number {
 
     for(;;) {
       ins = (u.ram[pc++] & 0xff);
-      k = keepFlag(ins) //(ins & 0x80);
-      s = returnFlag(ins) ? u.rst : u.wst // s = ins & 0x40 ? u.rst : u.wst;
+      k = keepFlag(ins)
+      s = returnFlag(ins) ? u.rst : u.wst 
       // opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
 
-      console.log({ ins, opCodes, op: opCodes[ins], base: base(ins), baseOp: opCodes[base(ins) || 0] })
+      console.log({ pc, ins, opCodes, op: opCodes[ins], base: base(ins), baseOp: opCodes[base(ins) || 0] })
 
       switch (ins) {
         case opCodes.BRK:     return 1
         case opCodes.JCI:     pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
         case opCodes.JMI:     pc += (PEEK2(u.ram.slice(pc)) + 2); break;
-        case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (pc + PEEK2(u.ram.slice(pc)) + 2); break;
+        case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (PEEK2(u.ram.slice(pc)) + 2); break;
         case opCodes.LIT:     PUSH(s, u.ram[pc++]); break;
         case opCodes.LIT2:    PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
         case opCodes.LITr:    PUSH(s, u.ram[pc++]); break;
