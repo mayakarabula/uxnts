@@ -61,7 +61,7 @@ export function uxn_eval(u: Uxn, pc: number): number {
     const L = () => s.dat[s.ptr - 3];
     const H2 = () => (s.dat[s.ptr - 3] << 8) | s.dat[s.ptr - 2];
     const T2 = () => (s.dat[s.ptr - 2] << 8) | s.dat[s.ptr - 1];
-    const N2 = () => (s.dat[s.ptr - 4] << 8) | s.dat[s.ptr- 3];
+    const N2 = () => (s.dat[s.ptr - 4] << 8) | s.dat[s.ptr - 3];
     const L2 = () => (s.dat[s.ptr - 6] << 8) | s.dat[s.ptr - 5];
 
     const HALT = (c: number): number => uxn_halt(u, ins, c, (pc - 1));
@@ -110,42 +110,22 @@ export function uxn_eval(u: Uxn, pc: number): number {
     for(;;) {
       ins = (u.ram[pc++] & 0xff);
       k = keepFlag(ins)
-      s = returnFlag(ins) ? u.rst : u.wst 
-      // opc = (!(ins & 0x1f) ? 0 - (ins >> 5) : ins & 0x3f);
+      s = returnFlag(ins) ? u.rst : u.wst
 
       console.log({ pc, ins, opCodes, op: opCodes[ins], base: base(ins), baseOp: opCodes[base(ins) || 0] })
 
       switch (ins) {
         case opCodes.BRK:     return 1
-        case opCodes.JCI: 
-        case opCodes.JMI:
-        case opCodes.JSI:
-          pc += 2
-          
-          console.log(PEEK2(u.ram.slice(pc)).toString(16))
-
-          if (ins === opCodes.JCI && PEEK2(u.ram.slice(pc)) === 0) {
-            break;
-          }
-          if (ins === opCodes.JSI) {
-            PUSH2(u.rst, pc)
-          }
-          pc += PEEK2(u.ram.slice(pc - 2))
-
-          break
-        // case opCodes.JCI:     pc += (s.dat[s.ptr--] * PEEK2(u.ram.slice(pc)) + 2); break;
-        // case opCodes.JMI:     pc += (PEEK2(u.ram.slice(pc)) + 2); break;
-        // case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += (PEEK2(u.ram.slice(pc)) + 2); break;
-        case opCodes.LIT:     PUSH(s, u.ram[pc++]); break;
-        case opCodes.LIT2:    PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
-        case opCodes.LITr:    PUSH(s, u.ram[pc++]); break;
-        case opCodes.LIT2r:   PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
+        case opCodes.JCI:     pc += (s.dat[s.ptr] ? 1 : 0) * PEEK2(u.ram.slice(pc)) + 2; break;
+        case opCodes.JMI:     pc += PEEK2(u.ram.slice(pc)) + 2; break;
+        case opCodes.JSI:     PUSH2(u.rst, pc + 2); pc += PEEK2(u.ram.slice(pc)) + 2; break;
       }
 
       const short = shortFlag(ins)
 
       if (short) {
         switch (base(ins)) {
+          case opCodes.LIT:     PUSH(s, u.ram[pc++]); break;
           case opCodes.INC:     t = T(); SET(1, 0); PUT(0, t + 1); break;
           case opCodes.POP:     SET(1, -1); break;
           case opCodes.NIP:     t = T(); SET(2, -1); PUT(0, t); break;
@@ -180,6 +160,7 @@ export function uxn_eval(u: Uxn, pc: number): number {
         }
       } else {
         switch (base(ins)) {
+          case opCodes.LIT:     PUSH2(s, PEEK2(u.ram.slice(pc))); pc += 2; break;
           case opCodes.INC:     t = T2(); SET(2, 0); PUT2(0, t + 1); break;
           case opCodes.POP:     SET(2, -2); break;
           case opCodes.NIP:     t = T2(); SET(4, -2); PUT2(0, t); break;
