@@ -1,7 +1,7 @@
 import { HEIGHT, screen_dei, screen_deo, screen_palette, uxn_screen, WIDTH } from "./devices/screen";
 import { system_deo, system_load } from "./devices/system";
 import { out, outError } from "./out";
-import { Uxn, PEEK2, uxn_eval, uxn_boot, PAGE_PROGRAM } from './uxn'
+import { Uxn, PEEK2, uxn_eval, uxn_boot, PAGE_PROGRAM, u16 } from './uxn'
 
 export const RAM_PAGES = 0x10
 export const PAD = 4
@@ -21,6 +21,8 @@ function emu_error(msg: string, err: string): number {
 }
 
 function console_deo(d: number[], port: number): void {
+  console.log('!!', d[port], d, port, '>>', String.fromCharCode(d[port]), '<<')
+
   switch (port) {
     case 0x8:
       out(String.fromCharCode(d[port]));
@@ -32,7 +34,7 @@ function console_deo(d: number[], port: number): void {
 }
 
 export function uxn_dei(u: Uxn, addr: number): number {
-  const p = addr & 0x0f, d = addr & 0xf0;
+  const p = u16(addr & 0x0f), d = u16(addr & 0xf0);
 	
   switch(d) {
     case 0x20: return screen_dei(u, addr);
@@ -46,7 +48,9 @@ export function uxn_dei(u: Uxn, addr: number): number {
 }
 
 export function uxn_deo(u: Uxn, addr: number): void {
-  const p = addr & 0x0f, d = addr & 0xf0;
+  const p = u16(addr & 0x0f), d = u16(addr & 0xf0);
+
+  console.log({ p, d })
 
 	switch(d) {
     case 0x00:
@@ -108,9 +112,9 @@ function main(): number {
     return u.dev[0x0f] & 0x7f;
   }
 
-  const screen_vector = PEEK2(u.dev.slice(0x20));
+  // const screen_vector = PEEK2(u.dev.slice(0x20));
 
-  uxn_eval(u, screen_vector)
+  // uxn_eval(u, screen_vector)
 
   draw()
 
