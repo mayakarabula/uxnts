@@ -1,22 +1,22 @@
-let output = ''
-let error = ''
+let output = '';
+let error = '';
 
 export const out = (c: string) => {
-    output += c;
+  output += c;
 
-    console.log(c)
-    
-    const element = document.getElementById('stdout');
-    if (element) {
-        element.textContent = output;
-    }
-}
+  console.log(c);
+
+  const element = document.getElementById('stdout');
+  if (element) {
+    element.textContent = output;
+  }
+};
 
 export const outError = (c: string) => {
-    error += c;
+  error += c;
 
-    const element = document.getElementById('stderr');
-    if (element) {
-        element.textContent = error;
-    }
-}
+  const element = document.getElementById('stderr');
+  if (element) {
+    element.textContent = error;
+  }
+};
