@@ -6,5 +6,6 @@
     "esModuleInterop": true,
     "strict": true,
     "outFile": "bundle.js"
-  }
+  },
+  "include": ["src/**/*"]
 }
