@@ -4,10 +4,8 @@ let error = ''
 export const out = (c: string) => {
     output += c;
 
-    // console.log({output})
-
     console.log(c)
-
+    
     const element = document.getElementById('stdout');
     if (element) {
         element.textContent = output;

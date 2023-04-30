@@ -12,6 +12,10 @@ export const u8 = (a: number) => {
   const u = new Uint8Array(1) ; u[0] = a ; return u[0]
 }
 
+export const s8 = (a: number) => {
+  const s = new Int8Array(1) ; s[0] = a ; return s[0]
+}
+
 export function POKE2(d: number[], addr: number, v: number) {
   d[addr] = u16(v >> 8);
   d[addr + 1] = u8(v);
@@ -118,6 +122,8 @@ export function uxn_eval(u: Uxn, pc: number): number {
       PUT(address, ((dei_mask[value >> 4] >> (value & 0xf)) & 0x1) ? uxn_dei(u, value) : u.dev[value]);
     }
 
+    console.log('starts computation for the ROM')
+
     for(;;) {
       ins = u8((u.ram[pc++]));
       k = keepFlag(ins)
@@ -167,8 +173,8 @@ export function uxn_eval(u: Uxn, pc: number): number {
             PUT(1, t); 
             break;          
           case opCodes.OVR:     t = T(); n = N(); SET(2, 1); PUT(0, n); PUT(1, t); PUT(2, n); break;
-          case opCodes.EQU:     t = T(); n = N(); SET(2, -1); PUT(0, n == t ? 1 : 0); break;
-          case opCodes.NEQ:     t = T(); n = N(); SET(2, -1); PUT(0, n != t ? 0 : 1); break;
+          case opCodes.EQU:     t = T(); n = N(); SET(2, -1); PUT(0, n === t ? 1 : 0); break;
+          case opCodes.NEQ:     t = T(); n = N(); SET(2, -1); PUT(0, n !== t ? 1 : 0); break;
           case opCodes.GTH:     
             t = T(); n = N(); SET(2, -1); 
             PUT(0, n > t ? 1 : 0);
@@ -176,15 +182,23 @@ export function uxn_eval(u: Uxn, pc: number): number {
           case opCodes.LTH:     t = T(); n = N(); SET(2, -1); PUT(0, n < t ? 1 : 0); break;
           case opCodes.JMP:     
             t = T(); SET(1, -1);
-            pc = u16(pc + t);
+            pc = u16(pc + s8(t));
             break;
-          case opCodes.JCN:     t = T(); n = N(); SET(2, -2); pc = u16(pc + u16(n * t)); break;
-          case opCodes.JSR:     t = T(); SET(1, -1); PUSH2(u.rst, pc); pc = u16(pc + t); break;
+          case opCodes.JCN:     
+            t = T(); n = N(); 
+            SET(2, -2);
+
+            if (n) {
+              pc = u16(pc + s8(t)); 
+            }
+            
+            break;
+          case opCodes.JSR:     t = T(); SET(1, -1); PUSH2(u.rst, pc); pc = u16(pc + s8(t)); break;
           case opCodes.STH:     t = T(); SET(1, -1); PUSH((ins & 0x40 ? u.wst : u.rst), t); break;
           case opCodes.LDZ:     t = T(); SET(1, 0); PUT(0, u.ram[t]); break;
           case opCodes.STZ:     t = T(); n = N(); SET(2,-2); u.ram[t] = (n); break;
-          case opCodes.LDR:     t = T(); SET(1, 0); PUT(0, u.ram[u16(pc + t)]); break;
-          case opCodes.STR:     t = T(); n = N(); SET(2,-2); u.ram[u16(pc + t)] = (n); break;
+          case opCodes.LDR:     t = T(); SET(1, 0); PUT(0, u.ram[u16(pc + s8(t))]); break;
+          case opCodes.STR:     t = T(); n = N(); SET(2,-2); u.ram[u16(pc + s8(t))] = (n); break;
           case opCodes.LDA:     t = T2(); SET(2,-1); PUT(0, u.ram[t]); break;
           case opCodes.STA:     t = T2(); n = L(); SET(3,-3); u.ram[t] = (n); break;
           case opCodes.DEI:     t = T(); SET(1, 0); DEI(0, t); break;
@@ -236,8 +250,8 @@ export function uxn_eval(u: Uxn, pc: number): number {
             PUT2(2, t); 
             break;   
           case opCodes.OVR:     t = T2(); n = N2(); SET(4, 2); PUT2(0, n); PUT2(2, t); PUT2(4, n); break;
-          case opCodes.EQU:     t = T2(); n = N2(); SET(4, -3); PUT(0, n == t ? 1 : 0); break;
-          case opCodes.NEQ:     t = T2(); n = N2(); SET(4, -3); PUT(0, n != t ? 1 : 0); break;
+          case opCodes.EQU:     t = T2(); n = N2(); SET(4, -3); PUT(0, n === t ? 1 : 0); break;
+          case opCodes.NEQ:     t = T2(); n = N2(); SET(4, -3); PUT(0, n !== t ? 1 : 0); break;
           case opCodes.GTH:     t = T2(); n = N2(); SET(4, -3); PUT(0, n > t ? 1 : 0); break;
           case opCodes.LTH:     
             t = T2(); n = N2();
@@ -249,13 +263,17 @@ export function uxn_eval(u: Uxn, pc: number): number {
             SET(2, -2);
             pc = t;
             break;
-          case opCodes.JCN:     t = T2(); n = L(); SET(3, -3); if(n) pc = t; break;
+          case opCodes.JCN:     
+            t = T2(); n = L();
+            SET(3, -3); 
+            if(n) { pc = t }
+            break;
           case opCodes.JSR:     t = T2(); SET(2, -2); PUSH2(u.rst, pc); pc = t; break;
           case opCodes.STH:     t = T2(); SET(2, -2); PUSH2((ins & 0x40 ? u.wst : u.rst), t); break;
           case opCodes.LDZ:     t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(t))); break;
           case opCodes.STZ:     t = T(); n = H2(); SET(3,-3); POKE2(u.ram, t, n); break;
-          case opCodes.LDR:     t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(u16(pc + t)))); break;
-          case opCodes.STR:     t = T(); n = H2(); SET(3,-3); POKE2(u.ram, (u16(pc + t)), n); break;
+          case opCodes.LDR:     t = T(); SET(1, 1); PUT2(0, PEEK2(u.ram.slice(u16(pc + s8(t))))); break;
+          case opCodes.STR:     t = T(); n = H2(); SET(3,-3); POKE2(u.ram, (u16(pc + s8(t))), n); break;
           case opCodes.LDA:     t = T2(); SET(2, 0); PUT2(0, PEEK2(u.ram.slice(t))); break;
           case opCodes.STA:     t = T2(); n = N2(); SET(4,-4); POKE2(u.ram, (t), n); break;
           case opCodes.DEI:     t = T(); SET(1, 1); DEI(1, t); DEI(0, t + 1); break;
