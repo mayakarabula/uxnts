@@ -21,7 +21,7 @@ function emu_error(msg: string, err: string): number {
 }
 
 function console_deo(d: number[], port: number): void {
-  console.log('!!', d[port], d, port, '>>', String.fromCharCode(d[port]), '<<')
+  // console.log('!!', d[port], d, port, '>>', String.fromCharCode(d[port]), '<<')
 
   switch (port) {
     case 0x8:
@@ -50,7 +50,7 @@ export function uxn_dei(u: Uxn, addr: number): number {
 export function uxn_deo(u: Uxn, addr: number): void {
   const p = u16(addr & 0x0f), d = u16(addr & 0xf0);
 
-  console.log({ p, d })
+  // console.log({ p, d })
 
 	switch(d) {
     case 0x00:

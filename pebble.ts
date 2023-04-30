@@ -4,13 +4,13 @@ let error = ''
 const out = (c: string) => {
     output += c;
 
-    simply.text({ title: output, subtitle: '' });
+    // simply.text({ title: output, subtitle: '' });
 }
 
 const outError = (c: string) => {
     error += c;
 
-    simply.text({ title: error, subtitle: '' });
+    // simply.text({ title: error, subtitle: '' });
 }
 
 // Short reports whether the opcode has the short flag set.

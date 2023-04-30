@@ -15,6 +15,7 @@
       LIT "b EMIT
       LIT "l EMIT
       LIT "e EMIT
+      LIT 10 EMIT
       LIT "< EMIT
       LIT "3 EMIT
       LIT "U EMIT

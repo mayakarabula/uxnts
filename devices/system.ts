@@ -67,7 +67,7 @@ export function system_deo(u: Uxn, d: number[], port: number)
 		system_cmd(u.ram, PEEK2(d.slice(2)));
 		break;
 	case 0xe:
-    console.log('DEO')
+    // console.log('DEO')
 		system_inspect(u);
 		break;
 	}
@@ -80,7 +80,7 @@ export function uxn_halt(u: Uxn, instr: number, err: number, addr: number)
 	const d = u.dev.slice(0x00);
 	const handler = PEEK2(d);
 
-  console.log('HALT', d, handler)
+  // console.log('HALT', d, handler)
 
 	if(handler) {
 		u.wst.ptr = 4;
