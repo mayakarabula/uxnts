@@ -1,4 +1,5 @@
 import { PEEK2, POKE2, Uxn } from '../uxn';
+import { draw, set_zoom } from '../uxnemu';
 
 export const WIDTH = 64 * 8;
 export const HEIGHT = 40 * 8;
@@ -141,7 +142,7 @@ function screen_resize(p: UxnScreen, width: number, height: number) {
   console.log('resize', p);
 }
 
-function screen_redraw(p: UxnScreen) {
+export function screen_redraw(p: UxnScreen) {
   let i,
     size = p.width * p.height,
     palette = new Array(4).fill(0);
@@ -160,7 +161,7 @@ function screen_redraw(p: UxnScreen) {
   p.fg.changed = p.bg.changed = 0;
 }
 
-function clamp(val: number, min: number, max: number) {
+export function clamp(val: number, min: number, max: number) {
   return val >= min ? (val <= max ? val : max) : min;
 }
 
@@ -265,4 +266,6 @@ export function screen_deo(ram: number[], d: number[], port: number) {
       break;
     }
   }
+
+  draw()
 }

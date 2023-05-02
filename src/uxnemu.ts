@@ -1,8 +1,10 @@
 import {
+  clamp,
   HEIGHT,
   screen_dei,
   screen_deo,
   screen_palette,
+  screen_redraw,
   uxn_screen,
   WIDTH
 } from './devices/screen';
@@ -91,31 +93,40 @@ export function uxn_deo(u: Uxn, addr: number): void {
   }
 }
 
-function draw() {
-  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+let canvas: HTMLCanvasElement;
+let ctx: CanvasRenderingContext2D | null;
 
-  canvas.width = uxn_screen.width;
-  canvas.height = uxn_screen.height;
+export function set_zoom (scale: number) {
+  zoom = clamp(scale, 1, 3);
+  console.log({ scale, zoom })
+}
+
+export function draw() {
+  if (uxn_screen.bg.changed || uxn_screen.fg.changed) {
+    screen_redraw(uxn_screen)
+  }
+
+  if (!canvas) {
+    canvas = document.getElementById('canvas') as HTMLCanvasElement;
+  }
+
+  canvas.width = (uxn_screen.width) * zoom;
+  canvas.height = (uxn_screen.height) * zoom;
 
   if (canvas) {
-    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      ctx = canvas.getContext('2d');
+    }
+
+    console.log(uxn_screen)
 
     if (ctx) {
-      for (let x = 0; x < WIDTH; x++) {
-        for (let y = 0; y < HEIGHT; y++) {
-          if (uxn_screen.bg.pixels[x + y * WIDTH]) {
-            ctx.fillStyle = `#${uxn_screen.palette[
-              uxn_screen.bg.pixels[x + y * WIDTH]
-            ].toString(16)}`;
-            ctx.fillRect(x, y, 1, 1);
-          }
+      ctx.scale(zoom, zoom)
 
-          if (uxn_screen.fg.pixels[x + y * WIDTH]) {
-            ctx.fillStyle = `#${uxn_screen.palette[
-              uxn_screen.fg.pixels[x + y * WIDTH]
-            ].toString(16)}`;
-            ctx.fillRect(x, y, 1, 1);
-          }
+      for (let x = 0; x < uxn_screen.width; x++) {
+        for (let y = 0; y < uxn_screen.height; y++) {
+          ctx.fillStyle = `#${uxn_screen.pixels[x + y * uxn_screen.width].toString(16)}`;
+          ctx.fillRect(x, y, 1, 1);
         }
       }
     }
@@ -128,6 +139,8 @@ function main(): number {
   if (!uxn_boot(u, new Array(0x10000 * RAM_PAGES).fill(0))) {
     return emu_error('Boot', 'Failed');
   }
+
+  set_zoom((window.innerWidth / 1280));
 
   if (!system_load(u)) {
     return emu_error('Load', 'Failed');
