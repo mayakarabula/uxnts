@@ -59,7 +59,7 @@ export class Uxn {
   }
 }
 
-export function uxn_eval(u: Uxn, pc: number): number {
+export const uxn_eval = async (u: Uxn, pc: number): Promise<number> => {
   let ins: number, k: number; // u8
   let t: number, n: number, l: number, tmp: number; // u16
   let s: Stack = new Stack();
@@ -82,7 +82,9 @@ export function uxn_eval(u: Uxn, pc: number): number {
   const N2 = () => PEEK2(s.dat.slice(s.ptr - 4));
   const L2 = () => PEEK2(s.dat.slice(s.ptr - 6));
 
-  const HALT = (c: number): number => uxn_halt(u, ins, c, pc - 1);
+  const HALT = async (c: number): Promise<number> => {
+    return await uxn_halt(u, ins, c, pc - 1);
+  };
 
   const SET = (mul: number, add: number): void => {
     if (mul > s.ptr) HALT(1);
@@ -135,7 +137,10 @@ export function uxn_eval(u: Uxn, pc: number): number {
 
   console.log('starts computation for the ROM');
 
-  for (;;) {
+  let BRK = 0;
+  let BATCH = 0;
+
+  const step = async (): Promise<number> => {
     ins = u8(u.ram[pc++]);
     k = keepFlag(ins);
     s = returnFlag(ins) ? u.rst : u.wst;
@@ -145,7 +150,7 @@ export function uxn_eval(u: Uxn, pc: number): number {
 
     switch (ins) {
       case opCodes.BRK:
-        return 1;
+        BRK = 1;
       case opCodes.JCI:
         pc = u16(
           pc + (s.dat[s.ptr - 1] > 0 ? 1 : 0) * PEEK2(u.ram.slice(pc)) + 2
@@ -558,8 +563,24 @@ export function uxn_eval(u: Uxn, pc: number): number {
           break;
       }
     }
-  }
-}
+
+    if (!BRK) {
+      if (BATCH < 100) {
+        BATCH++;
+        return await step();
+      } else {
+        BATCH = 0;
+        return await new Promise((resolve) =>
+          setTimeout(() => resolve(step()))
+        );
+      }
+    }
+
+    return 1;
+  };
+
+  return await step();
+};
 
 export function uxn_boot(u: Uxn, ram: number[]) {
   u.ram = ram;

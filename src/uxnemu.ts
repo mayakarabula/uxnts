@@ -70,8 +70,6 @@ export function uxn_deo(u: Uxn, addr: number): void {
   const p = u16(addr & 0x0f),
     d = u16(addr & 0xf0);
 
-  // console.log({ p, d })
-
   switch (d) {
     case 0x00:
       system_deo(u, u.dev.slice(d), p);
@@ -96,36 +94,38 @@ export function uxn_deo(u: Uxn, addr: number): void {
 let canvas: HTMLCanvasElement;
 let ctx: CanvasRenderingContext2D | null;
 
-export function set_zoom (scale: number) {
+export function set_zoom(scale: number) {
   zoom = clamp(scale, 1, 3);
-  console.log({ scale, zoom })
+  console.log({ scale, zoom });
 }
 
 export function draw() {
-  if (uxn_screen.bg.changed || uxn_screen.fg.changed) {
-    screen_redraw(uxn_screen)
+  if (!uxn_screen.bg.changed && !uxn_screen.fg.changed) {
+    return;
   }
+
+  screen_redraw(uxn_screen);
 
   if (!canvas) {
     canvas = document.getElementById('canvas') as HTMLCanvasElement;
   }
 
-  canvas.width = (uxn_screen.width) * zoom;
-  canvas.height = (uxn_screen.height) * zoom;
+  canvas.width = uxn_screen.width * zoom;
+  canvas.height = uxn_screen.height * zoom;
 
   if (canvas) {
     if (!ctx) {
       ctx = canvas.getContext('2d');
     }
 
-    console.log(uxn_screen)
-
     if (ctx) {
-      ctx.scale(zoom, zoom)
+      ctx.scale(zoom, zoom);
 
       for (let x = 0; x < uxn_screen.width; x++) {
         for (let y = 0; y < uxn_screen.height; y++) {
-          ctx.fillStyle = `#${uxn_screen.pixels[x + y * uxn_screen.width].toString(16)}`;
+          ctx.fillStyle = `#${uxn_screen.pixels[
+            x + y * uxn_screen.width
+          ].toString(16)}`;
           ctx.fillRect(x, y, 1, 1);
         }
       }
@@ -140,7 +140,7 @@ function main(): number {
     return emu_error('Boot', 'Failed');
   }
 
-  set_zoom((window.innerWidth / 1280));
+  set_zoom(window.innerWidth / 1280);
 
   if (!system_load(u)) {
     return emu_error('Load', 'Failed');
@@ -154,9 +154,11 @@ function main(): number {
 
   // uxn_eval(u, screen_vector)
 
-  draw();
-
   return 0;
 }
 
 main();
+
+setInterval(() => {
+  draw();
+}, 50);

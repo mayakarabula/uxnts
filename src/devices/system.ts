@@ -69,7 +69,12 @@ export function system_deo(u: Uxn, d: number[], port: number) {
 
 /* Error */
 
-export function uxn_halt(u: Uxn, instr: number, err: number, addr: number) {
+export const uxn_halt = async (
+  u: Uxn,
+  instr: number,
+  err: number,
+  addr: number
+) => {
   const d = u.dev.slice(0x00);
   const handler = PEEK2(d);
 
@@ -82,7 +87,7 @@ export function uxn_halt(u: Uxn, instr: number, err: number, addr: number) {
     u.wst.dat[2] = instr;
     u.wst.dat[3] = err;
 
-    return uxn_eval(u, handler);
+    return await uxn_eval(u, handler);
   } else {
     system_inspect(u);
     outError(
@@ -92,4 +97,4 @@ export function uxn_halt(u: Uxn, instr: number, err: number, addr: number) {
     );
   }
   return 0;
-}
+};
