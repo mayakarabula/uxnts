@@ -123,9 +123,11 @@ export function draw() {
 
       for (let x = 0; x < uxn_screen.width; x++) {
         for (let y = 0; y < uxn_screen.height; y++) {
-          ctx.fillStyle = `#${uxn_screen.pixels[
-            x + y * uxn_screen.width
-          ].toString(16)}`;
+          let color = uxn_screen.pixels[x + y * uxn_screen.width].toString(16)
+          if (color.length === 1) { color = (new Array(3)).fill(color).join('') }
+
+          ctx.fillStyle = `#${color}`;
+
           ctx.fillRect(x, y, 1, 1);
         }
       }

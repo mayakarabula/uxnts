@@ -1,4 +1,4 @@
-import { PEEK2, POKE2, Uxn } from '../uxn';
+import { PEEK2, POKE2, u16, Uxn } from '../uxn';
 import { draw, set_zoom } from '../uxnemu';
 
 export const WIDTH = 64 * 8;
@@ -16,7 +16,7 @@ export class Layer {
 }
 
 export class UxnScreen {
-  palette: number[] = new Array(4).fill(0);
+  palette: number[] = new Array(16).fill(0);
   pixels: number[] = [];
   width: number;
   height: number;
@@ -100,7 +100,7 @@ function screen_blit(
   for (v = 0; v < 8; v++) {
     let c = sprite[v] | (twobpp ? sprite[v + 8] << 8 : 0);
 
-    for (h = 7; h >= 0; --h, c >>= 1) {
+    for (h = 7; h >= 0; c >>= 1) {
       let ch = (c & 1) | ((c >> 7) & 2);
 
       if (opaque || ch) {
@@ -112,6 +112,7 @@ function screen_blit(
           blending[ch][color]
         );
       }
+      h--
     }
   }
 }
@@ -143,7 +144,7 @@ function screen_resize(p: UxnScreen, width: number, height: number) {
 export function screen_redraw(p: UxnScreen) {
   let i,
     size = p.width * p.height,
-    palette = new Array(4).fill(0);
+    palette = new Array(16).fill(0);
 
   for (i = 0; i < 16; i++) palette[i] = p.palette[i >> 2 ? i >> 2 : i & 3];
 
@@ -254,7 +255,7 @@ export function screen_deo(ram: number[], d: number[], port: number) {
             d[0xf] & 0x20,
             twobpp
           );
-          addr += (d[0x6] & 0x04) << (1 + twobpp);
+          addr += u16(u16(d[0x6] & 0x04) << (1 + twobpp));
         }
       }
       POKE2(d, 0xc, addr); /* auto addr+length */
