@@ -1,6 +1,7 @@
 import { uxn_halt } from './devices/system';
 import { base, keepFlag, opCodes, returnFlag, shortFlag } from './opCodes';
 import { deo_mask, dei_mask, uxn_deo, uxn_dei } from './uxnemu';
+import { out } from './out'
 
 export const PAGE_PROGRAM = 0x0100;
 
@@ -145,8 +146,8 @@ export const uxn_eval = async (u: Uxn, pc: number): Promise<number> => {
     k = keepFlag(ins);
     s = returnFlag(ins) ? u.rst : u.wst;
 
-    // console.log(opCodes[ins])
-    // console.log("( ", s.dat.slice(0, s.ptr).map(i => i.toString(16).padStart(2, "0")).join(' '), " )")
+    // out(opCodes[ins] + '\n')
+    // out("( " + s.dat.slice(0, s.ptr).map(i => i.toString(16).padStart(2, "0")).join(' ') + " )\n")
 
     switch (ins) {
       case opCodes.BRK:
@@ -565,7 +566,7 @@ export const uxn_eval = async (u: Uxn, pc: number): Promise<number> => {
     }
 
     if (!BRK) {
-      if (BATCH < 100) {
+      if (BATCH < 150) {
         BATCH++;
         return await step();
       } else {

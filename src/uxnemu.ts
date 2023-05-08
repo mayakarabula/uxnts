@@ -110,8 +110,8 @@ export function draw() {
     canvas = document.getElementById('canvas') as HTMLCanvasElement;
   }
 
-  canvas.width = uxn_screen.width * zoom;
-  canvas.height = uxn_screen.height * zoom;
+  canvas.width = uxn_screen.width * zoom * 1.5;
+  canvas.height = uxn_screen.height * zoom * 1.5;
 
   if (canvas) {
     if (!ctx) {
@@ -119,7 +119,7 @@ export function draw() {
     }
 
     if (ctx) {
-      ctx.scale(zoom, zoom);
+      ctx.scale(zoom * 1.5, zoom * 1.5);
 
       for (let x = 0; x < uxn_screen.width; x++) {
         for (let y = 0; y < uxn_screen.height; y++) {
@@ -163,4 +163,4 @@ main();
 
 setInterval(() => {
   draw();
-}, 50);
+}, 1000 / 60);
