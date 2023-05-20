@@ -50,12 +50,14 @@ class Stack {
   }
 
   _pop(): number {
-    return u16((this._popShort(1) || 0 << 8) + (this._popShort(2) || 0));
+    const a = this._popShort();
+    const b = this._popShort();
+    return u16((b << 8) + a);
   }
 
-  _popShort(n: number = 1) {
+  _popShort() {
     if (this.keep) {
-      const value = this.memory[this.memory.length - this.popped - n];
+      const value = this.memory[this.memory.length - 1 - this.popped];
       this.popped++;
       return value || 0;
     } else {
@@ -85,14 +87,22 @@ export class Uxn {
     return u16((this.ram[pc - 2] << 8) + this.ram[pc - 1]);
   };
 
-  out = () => {};
+  out = (port: number, value: number) => {
+    const dev = port & 0xf0;
+    port &= 0xf;
+
+    switch (dev) {
+      case 0x10:
+        console.log(String.fromCharCode(value));
+    }
+  };
 
   eval(pc: number) {
     const workingStack = new Stack();
     const returnStack = new Stack();
     let currentStack: Stack;
 
-    for (let i = 0; i < 25; i++) {
+    for (;;) {
       let instruction = this.ram[pc++];
       currentStack = returnFlag(instruction) ? returnStack : workingStack;
       currentStack.keep = keepFlag(instruction);
@@ -101,15 +111,15 @@ export class Uxn {
 
       let temp: number, temp2: number, temp3: number;
 
-      console.log(
-        instruction.toString(16),
-        opCodes[instruction],
-        opCodes[base(instruction) || 0],
-        returnFlag(instruction),
-        keepFlag(instruction),
-        shortFlag(instruction)
-      );
-      currentStack.print();
+      // console.log(
+      //   instruction.toString(16),
+      //   opCodes[instruction],
+      //   opCodes[base(instruction) || 0],
+      //   returnFlag(instruction),
+      //   keepFlag(instruction),
+      //   shortFlag(instruction)
+      // );
+      // currentStack.print();
 
       switch (base(instruction)) {
         case opCodes.BRK:
@@ -123,11 +133,11 @@ export class Uxn {
           }
           break;
         case opCodes.JCI:
-          temp = workingStack._pop();
+          pc += 2;
+          temp = currentStack.pop();
           if (temp !== 0) {
             pc += this.peek(pc);
-          } else {
-            pc += 2;
+            pc = u16(pc);
           }
           break;
         case opCodes.JMI:
@@ -173,16 +183,16 @@ export class Uxn {
           currentStack.push(temp2);
           break;
         case opCodes.EQU:
-          currentStack.push(currentStack.pop() === currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(currentStack.pop() === currentStack.pop() ? 1 : 0);
           break;
         case opCodes.NEQ:
-          currentStack.push(currentStack.pop() === currentStack.pop() ? 0 : 1);
+          currentStack._pushShort(currentStack.pop() === currentStack.pop() ? 0 : 1);
           break;
         case opCodes.GTH:
-          currentStack.push(currentStack.pop() < currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(currentStack.pop() < currentStack.pop() ? 1 : 0);
           break;
         case opCodes.LTH:
-          currentStack.push(currentStack.pop() > currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(currentStack.pop() > currentStack.pop() ? 1 : 0);
           break;
         case opCodes.JMP:
           if (currentStack.short) {
@@ -269,6 +279,7 @@ export class Uxn {
           temp = currentStack._popShort();
           temp2 = currentStack.pop();
           if (currentStack.short) {
+            this.out(temp, temp2);
           } else {
           }
           break;
