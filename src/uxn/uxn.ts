@@ -93,7 +93,7 @@ export class Uxn {
 
     switch (dev) {
       case 0x10:
-        console.log(String.fromCharCode(value));
+        process.stdout.write(String.fromCharCode(value));
     }
   };
 
@@ -110,16 +110,6 @@ export class Uxn {
       currentStack.popped = 0;
 
       let temp: number, temp2: number, temp3: number;
-
-      // console.log(
-      //   instruction.toString(16),
-      //   opCodes[instruction],
-      //   opCodes[base(instruction) || 0],
-      //   returnFlag(instruction),
-      //   keepFlag(instruction),
-      //   shortFlag(instruction)
-      // );
-      // currentStack.print();
 
       switch (base(instruction)) {
         case opCodes.BRK:
@@ -183,16 +173,24 @@ export class Uxn {
           currentStack.push(temp2);
           break;
         case opCodes.EQU:
-          currentStack._pushShort(currentStack.pop() === currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(
+            currentStack.pop() === currentStack.pop() ? 1 : 0
+          );
           break;
         case opCodes.NEQ:
-          currentStack._pushShort(currentStack.pop() === currentStack.pop() ? 0 : 1);
+          currentStack._pushShort(
+            currentStack.pop() === currentStack.pop() ? 0 : 1
+          );
           break;
         case opCodes.GTH:
-          currentStack._pushShort(currentStack.pop() < currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(
+            currentStack.pop() < currentStack.pop() ? 1 : 0
+          );
           break;
         case opCodes.LTH:
-          currentStack._pushShort(currentStack.pop() > currentStack.pop() ? 1 : 0);
+          currentStack._pushShort(
+            currentStack.pop() > currentStack.pop() ? 1 : 0
+          );
           break;
         case opCodes.JMP:
           if (currentStack.short) {
@@ -256,8 +254,10 @@ export class Uxn {
           this.ram[pc + temp] = currentStack.pop();
           break;
         case opCodes.LDA:
-          temp = currentStack._popShort();
+          temp = currentStack._pop();
+
           currentStack.push(this.ram[temp]);
+          
           if (!currentStack.short) {
             currentStack.push(this.ram[temp + 1]);
           }
@@ -319,5 +319,3 @@ export class Uxn {
     }
   }
 }
-
-export const uxn = new Uxn();

@@ -5,8 +5,8 @@ const file = process.argv[2];
 const rom = [...readFileSync(file)];
 
 writeFileSync(
-  "output.js",
+  "output.ts",
   `
-window.rom = [${rom.join(",")}];
+export const rom = [${rom.join(",")}];
 `
 );
