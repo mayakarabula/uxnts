@@ -1,11 +1,11 @@
 import { Uxn } from "../uxn/uxn";
 import { PAGE_PROGRAM } from "../uxn/uxncli";
-import { rom } from '../output'
+import { rom } from "../output";
 
 export class System {
   memory: number[];
 
-  constructor () {
+  constructor() {
     this.memory = new Array(256).fill(0);
   }
 
@@ -23,5 +23,5 @@ export class System {
     }
 
     return 0;
-  } 
+  }
 }

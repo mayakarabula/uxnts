@@ -257,7 +257,7 @@ export class Uxn {
           temp = currentStack._pop();
 
           currentStack.push(this.ram[temp]);
-          
+
           if (!currentStack.short) {
             currentStack.push(this.ram[temp + 1]);
           }
