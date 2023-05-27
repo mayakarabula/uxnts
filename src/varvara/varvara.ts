@@ -1,13 +1,16 @@
 import { Uxn } from "../uxn/uxn";
+import { Console } from "./console";
 import { System } from "./system";
 
 export class Varvara {
   uxn: Uxn;
   system: System;
+  console: Console;
 
   constructor() {
-    this.uxn = new Uxn();
     this.system = new System();
+    this.console = new Console();
+    this.uxn = new Uxn(this);
   }
 
   run(pc: number) {

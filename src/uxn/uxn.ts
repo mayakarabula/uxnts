@@ -1,3 +1,4 @@
+import { Varvara } from "../varvara/varvara";
 import { base, keepFlag, opCodes, returnFlag, shortFlag } from "./op";
 
 export const u16 = (a: number) => {
@@ -78,9 +79,11 @@ class Stack {
 
 export class Uxn {
   ram: number[];
+  varvara: Varvara;
 
-  constructor() {
+  constructor(_varavara: Varvara) {
     this.ram = new Array(0x100000).fill(0);
+    this.varvara = _varavara;
   }
 
   peek = (pc: number) => {
@@ -93,7 +96,8 @@ export class Uxn {
 
     switch (dev) {
       case 0x10:
-        process.stdout.write(String.fromCharCode(value));
+        this.varvara.console.out(port, value);
+        break;
     }
   };
 
@@ -109,7 +113,7 @@ export class Uxn {
       currentStack.short = shortFlag(instruction);
       currentStack.popped = 0;
 
-      let temp: number, temp2: number, temp3: number;
+      let temp: number, temp2: number, temp3: number, port: number, value: number;
 
       switch (base(instruction)) {
         case opCodes.BRK:
@@ -276,10 +280,10 @@ export class Uxn {
           }
           break;
         case opCodes.DEO:
-          temp = currentStack._popShort();
-          temp2 = currentStack.pop();
+          port = currentStack._popShort();
+          value = currentStack.pop();
           if (currentStack.short) {
-            this.out(temp, temp2);
+            this.out(port, value);
           } else {
           }
           break;
